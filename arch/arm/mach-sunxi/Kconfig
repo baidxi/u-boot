@@ -173,7 +173,7 @@ config SUNXI_BL31_BASE
 	hex
 	default 0x00044000 if MACH_SUN50I || MACH_SUN50I_H5
 	default 0x00104000 if MACH_SUN50I_H6
-	default 0x40000000 if MACH_SUN50I_H616
+	default 0x40000000 if MACH_SUN50I_H616 || MACH_SUN50I_A133
 	default 0x0
 	help
 	  Address where BL31 (TF-A) is loaded, or zero if BL31 is not used.
