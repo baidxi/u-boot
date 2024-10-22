@@ -721,13 +721,6 @@ dtb-$(CONFIG_MACH_SUN50I_H6) += \
 	sun50i-h6-pine-h64-model-b.dtb \
 	sun50i-h6-tanix-tx6.dtb \
 	sun50i-h6-tanix-tx6-mini.dtb
-dtb-$(CONFIG_MACH_SUN50I_H616) += \
-	sun50i-h313-tanix-tx1.dtb \
-	sun50i-h616-orangepi-zero2.dtb \
-	sun50i-h618-orangepi-zero2w.dtb \
-	sun50i-h618-orangepi-zero3.dtb \
-	sun50i-h618-transpeed-8k618-t.dtb \
-	sun50i-h616-x96-mate.dtb
 dtb-$(CONFIG_MACH_SUN50I) += \
 	sun50i-a64-amarula-relic.dtb \
 	sun50i-a64-bananapi-m64.dtb \
@@ -968,8 +961,6 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mp-dhcom-som-overlay-eth2xfast.dtbo \
 	imx8mp-dhcom-pdk-overlay-eth2xfast.dtbo \
 	imx8mp-dhcom-drc02.dtb \
-	imx8mp-dhcom-pdk2.dtb \
-	imx8mp-dhcom-pdk3.dtb \
 	imx8mp-dhcom-pdk3-overlay-rev100.dtbo \
 	imx8mp-dhcom-picoitx.dtb \
 	imx8mp-icore-mx8mp-edimm2.2.dtb \
@@ -1149,7 +1140,6 @@ dtb-$(CONFIG_ASPEED_AST2600) += \
 dtb-$(CONFIG_ARCH_STI) += stih410-b2260.dtb
 
 dtb-$(CONFIG_STM32MP13X) += \
-	stm32mp135f-dhcor-dhsbc.dtb \
 	stm32mp135f-dk.dtb
 
 dtb-$(CONFIG_STM32MP15X) += \
@@ -1165,13 +1155,7 @@ dtb-$(CONFIG_STM32MP15X) += \
 	stm32mp157c-ed1-scmi.dtb \
 	stm32mp157c-ev1.dtb \
 	stm32mp157c-ev1-scmi.dtb \
-	stm32mp157c-odyssey.dtb \
-	stm32mp15xx-dhcom-drc02.dtb \
-	stm32mp15xx-dhcom-pdk2.dtb \
-	stm32mp15xx-dhcom-picoitx.dtb \
-	stm32mp15xx-dhcor-avenger96.dtb \
-	stm32mp15xx-dhcor-drc-compact.dtb \
-	stm32mp15xx-dhcor-testbench.dtb
+	stm32mp157c-odyssey.dtb
 
 dtb-$(CONFIG_STM32MP25X) += \
 	stm32mp257f-ev1.dtb
@@ -1313,16 +1297,8 @@ dtb-$(CONFIG_TARGET_CORSTONE1000) += corstone1000-mps3.dtb \
 
 include $(srctree)/scripts/Makefile.dts
 
-targets += $(dtb-y)
-
 # Add any required device tree compiler flags here
 DTC_FLAGS += -a 0x8
 
 DTC_FLAGS_imx8mp-dhcom-som-overlay-rev100 += -Wno-avoid_default_addr_size -Wno-reg_format
 DTC_FLAGS_imx8mp-dhcom-pdk3-overlay-rev100 += -Wno-avoid_default_addr_size -Wno-reg_format
-
-PHONY += dtbs
-dtbs: $(addprefix $(obj)/, $(dtb-y))
-	@:
-
-clean-files := *.dtb *.dtbo *_HS

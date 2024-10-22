@@ -282,14 +282,6 @@ config SPL_FIT_IMAGE_POST_PROCESS
 	  injected into the FIT creation (i.e. the blobs would have been pre-
 	  processed before being added to the FIT image).
 
-config SPL_FIT_SOURCE
-	string ".its source file for U-Boot FIT image"
-	depends on SPL_FIT
-	help
-	  Specifies a (platform specific) FIT source file to generate the
-	  U-Boot FIT image. This could specify further image to load and/or
-	  execute.
-
 config USE_SPL_FIT_GENERATOR
 	bool "Use a script to generate the .its script"
 	depends on SPL_FIT
@@ -503,7 +495,8 @@ config BOOTMETH_ANDROID
 	select ANDROID_AB
 	select ANDROID_BOOT_IMAGE
 	select CMD_BCB
-	select CMD_FASTBOOT
+	imply CMD_FASTBOOT
+	imply FASTBOOT if !NET_LWIP
 	select PARTITION_TYPE_GUID
 	select PARTITION_UUIDS
 	help
@@ -559,6 +552,7 @@ config BOOTMETH_EXTLINUX_PXE
 config BOOTMETH_EFILOADER
 	bool "Bootdev support for EFI boot"
 	depends on EFI_BINARY_EXEC
+	imply CMD_TFTPBOOT if CMD_NET
 	default y
 	help
 	  Enables support for EFI boot using bootdevs. This makes the
