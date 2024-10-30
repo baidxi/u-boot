@@ -233,6 +233,7 @@ config SPL_LOAD_FIT
 config SPL_LOAD_FIT_ADDRESS
 	hex "load address of fit image"
 	depends on SPL_LOAD_FIT
+	default 0x44000000 if ARCH_IMX8M
 	default 0x0
 	help
 	  Specify the load address of the fit image that will be loaded
@@ -468,6 +469,13 @@ config BOOTSTD_BOOTCOMMAND
 	  For now this is only selected if distro boot is NOT used, since
 	  standard boot does not support all of the features of distro boot
 	  yet.
+
+config BOOTSTD_MENU
+	bool "Provide a menu of available bootflows for standard boot"
+	depends on BOOTSTD_FULL && EXPO
+	default y
+	help
+	  Provide a menu of available bootflows and related options.
 
 config BOOTSTD_PROG
 	bool "Use programmatic boot"
@@ -1683,6 +1691,7 @@ config FDT_FIXUP_PARTITIONS
 
 config FDT_SIMPLEFB
 	bool "FDT tools for simplefb support"
+	depends on VIDEO
 	help
 	  Enable the fdt tools to manage the simple fb nodes in device tree.
 	  These functions can be used by board to indicate to the OS

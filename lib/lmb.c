@@ -27,9 +27,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MAP_OP_FREE		(u8)0x2
 #define MAP_OP_ADD		(u8)0x3
 
-#define LMB_ALLOC_ANYWHERE	0
-#define LMB_ALIST_INITIAL_SIZE	4
-
 static struct lmb lmb;
 
 static bool lmb_should_notify(enum lmb_flags flags)
@@ -40,7 +37,7 @@ static bool lmb_should_notify(enum lmb_flags flags)
 
 static int __maybe_unused lmb_map_update_notify(phys_addr_t addr,
 						phys_size_t size,
-						u8 op)
+						u8 op, enum lmb_flags flags)
 {
 	u64 efi_addr;
 	u64 pages;
@@ -50,6 +47,9 @@ static int __maybe_unused lmb_map_update_notify(phys_addr_t addr,
 		log_err("Invalid map update op received (%d)\n", op);
 		return -1;
 	}
+
+	if (!lmb_should_notify(flags))
+		return 0;
 
 	efi_addr = (uintptr_t)map_sysmem(addr, 0);
 	pages = efi_size_in_pages(size + (efi_addr & EFI_PAGE_MASK));
@@ -64,9 +64,9 @@ static int __maybe_unused lmb_map_update_notify(phys_addr_t addr,
 		log_err("%s: LMB Map notify failure %lu\n", __func__,
 			status & ~EFI_ERROR_MASK);
 		return -1;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }
 
 static void lmb_print_region_flags(enum lmb_flags flags)
@@ -76,6 +76,7 @@ static void lmb_print_region_flags(enum lmb_flags flags)
 
 	do {
 		bitpos = flags ? fls(flags) - 1 : 0;
+		assert_noisy(bitpos < ARRAY_SIZE(flag_str));
 		printf("%s", flag_str[bitpos]);
 		flags &= ~(1ull << bitpos);
 		puts(flags ? ", " : "\n");
@@ -450,7 +451,7 @@ static long lmb_add_region_flags(struct alist *lmb_rgn_lst, phys_addr_t base,
 	}
 
 	if (coalesced)
-		return coalesced;
+		return 0;
 
 	if (alist_full(lmb_rgn_lst) &&
 	    !alist_expand_by(lmb_rgn_lst, lmb_rgn_lst->alloc))
@@ -487,13 +488,10 @@ long lmb_add(phys_addr_t base, phys_size_t size)
 	struct alist *lmb_rgn_lst = &lmb.free_mem;
 
 	ret = lmb_add_region(lmb_rgn_lst, base, size);
-	if (ret < 0)
+	if (ret)
 		return ret;
 
-	if (lmb_should_notify(LMB_NONE))
-		return lmb_map_update_notify(base, size, MAP_OP_ADD);
-
-	return 0;
+	return lmb_map_update_notify(base, size, MAP_OP_ADD, LMB_NONE);
 }
 
 static long _lmb_free(phys_addr_t base, phys_size_t size)
@@ -566,10 +564,7 @@ long lmb_free_flags(phys_addr_t base, phys_size_t size,
 	if (ret < 0)
 		return ret;
 
-	if (lmb_should_notify(flags))
-		return lmb_map_update_notify(base, size, MAP_OP_FREE);
-
-	return ret;
+	return lmb_map_update_notify(base, size, MAP_OP_FREE, flags);
 }
 
 long lmb_free(phys_addr_t base, phys_size_t size)
@@ -583,13 +578,10 @@ long lmb_reserve_flags(phys_addr_t base, phys_size_t size, enum lmb_flags flags)
 	struct alist *lmb_rgn_lst = &lmb.used_mem;
 
 	ret = lmb_add_region_flags(lmb_rgn_lst, base, size, flags);
-	if (ret < 0)
-		return -1;
+	if (ret)
+		return ret;
 
-	if (lmb_should_notify(flags))
-		return lmb_map_update_notify(base, size, MAP_OP_RESERVE);
-
-	return ret;
+	return lmb_map_update_notify(base, size, MAP_OP_RESERVE, flags);
 }
 
 long lmb_reserve(phys_addr_t base, phys_size_t size)
@@ -621,7 +613,6 @@ static phys_addr_t lmb_align_down(phys_addr_t addr, phys_size_t size)
 static phys_addr_t _lmb_alloc_base(phys_size_t size, ulong align,
 				    phys_addr_t max_addr, enum lmb_flags flags)
 {
-	u8 op;
 	int ret;
 	long i, rgn;
 	phys_addr_t base = 0;
@@ -651,16 +642,14 @@ static phys_addr_t _lmb_alloc_base(phys_size_t size, ulong align,
 			if (rgn < 0) {
 				/* This area isn't reserved, take it */
 				if (lmb_add_region_flags(&lmb.used_mem, base,
-							 size, flags) < 0)
+							 size, flags))
 					return 0;
 
-				if (lmb_should_notify(flags)) {
-					op = MAP_OP_RESERVE;
-					ret = lmb_map_update_notify(base, size,
-								    op);
-					if (ret)
-						return ret;
-				}
+				ret = lmb_map_update_notify(base, size,
+							    MAP_OP_RESERVE,
+							    flags);
+				if (ret)
+					return ret;
 
 				return base;
 			}
@@ -677,23 +666,6 @@ static phys_addr_t _lmb_alloc_base(phys_size_t size, ulong align,
 phys_addr_t lmb_alloc(phys_size_t size, ulong align)
 {
 	return lmb_alloc_base(size, align, LMB_ALLOC_ANYWHERE);
-}
-
-/**
- * lmb_alloc_flags() - Allocate memory region with specified attributes
- * @size: Size of the region requested
- * @align: Alignment of the memory region requested
- * @flags: Memory region attributes to be set
- *
- * Allocate a region of memory with the attributes specified through the
- * parameter.
- *
- * Return: base address on success, 0 on error
- */
-phys_addr_t lmb_alloc_flags(phys_size_t size, ulong align, uint flags)
-{
-	return _lmb_alloc_base(size, align, LMB_ALLOC_ANYWHERE,
-			       flags);
 }
 
 phys_addr_t lmb_alloc_base(phys_size_t size, ulong align, phys_addr_t max_addr)
@@ -887,12 +859,12 @@ int lmb_init(void)
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(UNIT_TEST)
 struct lmb *lmb_get(void)
 {
 	return &lmb;
 }
 
+#if CONFIG_IS_ENABLED(UNIT_TEST)
 int lmb_push(struct lmb *store)
 {
 	int ret;
