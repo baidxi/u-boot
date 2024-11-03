@@ -8,4 +8,6 @@
 
 #include <configs/sunxi-common.h>
 
+#define CFG_SYS_MEM_RESERVE_SECURE	(16 * 1024 * 1024)	/* 16MB */
+
 #endif /* __CONFIG_H */

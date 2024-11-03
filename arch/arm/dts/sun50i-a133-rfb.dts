@@ -99,7 +99,7 @@
 	mmc-hs200-1_8v;
 	no-sdio;
 	no-mmc;
-	status = "okay";
+	status = "disabled";
 };
 
 &mmc1 {
@@ -142,11 +142,11 @@
 &r_i2c0 {
 	status = "okay";
 
-	axp707: pmic@34 {
-		compatible = "x-powers,axp717";
+	axp707: pmic@68 {
+		compatible = "x-powers,axp707";
 		interrupt-controller;
 		#interrupt-cells = <1>;
-		reg = <0x34>;
+		reg = <0x68>;
 
 		x-powers,self-working-mode;
 		vina-supply = <&reg_vcc5v>;
