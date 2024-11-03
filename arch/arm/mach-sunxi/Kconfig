@@ -133,8 +133,7 @@ config AXP_PMIC_BUS
 config SUNXI_SRAM_ADDRESS
 	hex
 	default 0x10000 if MACH_SUN9I || MACH_SUN50I || MACH_SUN50I_H5
-	default 0x20000 if SUN50I_GEN_H6 && !MACH_SUN50I_A133 || SUNXI_GEN_NCAT2 
-	default 0x28000 if MACH_SUN50I_A133
+	default 0x20000 if SUN50I_GEN_H6 && MACH_SUN50I_A133 || SUNXI_GEN_NCAT2 
 	default 0x0
 	---help---
 	Older Allwinner SoCs have their mask boot ROM mapped just below 4GB,
@@ -173,7 +172,8 @@ config SUNXI_BL31_BASE
 	hex
 	default 0x00044000 if MACH_SUN50I || MACH_SUN50I_H5
 	default 0x00104000 if MACH_SUN50I_H6
-	default 0x40000000 if MACH_SUN50I_H616 || MACH_SUN50I_A133
+	default 0x40000000 if MACH_SUN50I_H616
+	default 0x48000000 if MACH_SUN50I_A133
 	default 0x0
 	help
 	  Address where BL31 (TF-A) is loaded, or zero if BL31 is not used.
