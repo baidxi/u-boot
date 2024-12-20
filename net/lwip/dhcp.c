@@ -3,6 +3,7 @@
 
 #include <command.h>
 #include <console.h>
+#include <log.h>
 #include <dm/device.h>
 #include <linux/delay.h>
 #include <linux/errno.h>
@@ -27,9 +28,9 @@ static void call_lwip_dhcp_fine_tmr(void *ctx)
 
 static int dhcp_loop(struct udevice *udev)
 {
-	char *ipstr = "ipaddr\0\0";
-	char *maskstr = "netmask\0\0";
-	char *gwstr = "gatewayip\0\0";
+	char ipstr[] = "ipaddr\0\0";
+	char maskstr[] = "netmask\0\0";
+	char gwstr[] = "gatewayip\0\0";
 	unsigned long start;
 	struct netif *netif;
 	struct dhcp *dhcp;
@@ -111,9 +112,28 @@ static int dhcp_loop(struct udevice *udev)
 
 int do_dhcp(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
+	int ret;
+	struct udevice *dev;
+
 	eth_set_current();
 
-	return dhcp_loop(eth_get_dev());
+	dev = eth_get_dev();
+	if (!dev) {
+		log_err("No network device\n");
+		return CMD_RET_FAILURE;
+	}
+
+	ret = dhcp_loop(dev);
+	if (ret)
+		return ret;
+
+	if (argc > 1) {
+		struct cmd_tbl cmdtp = {};
+
+		return do_tftpb(&cmdtp, 0, argc, argv);
+	}
+
+	return CMD_RET_SUCCESS;
 }
 
 int dhcp_run(ulong addr, const char *fname, bool autoload)
